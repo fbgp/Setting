@@ -1,6 +1,7 @@
 <?php namespace Philf\Setting;
 
 use Illuminate\Support\ServiceProvider;
+use Philf\Setting\Adapters\File;
 use Philf\Setting\interfaces\LaravelFallbackInterface;
 
 class SettingServiceProvider extends ServiceProvider {
@@ -13,37 +14,15 @@ class SettingServiceProvider extends ServiceProvider {
     protected $defer = false;
 
     /**
-     * Bootstrap the application events.
-     *
-     * @return void
-     */
-    public function boot()
-    {
-        $this->package('philf/setting');
-    }
-
-    /**
      * Register the service provider.
      *
      * @return void
      */
     public function register()
     {
-        $this->app['setting'] = $this->app->share(function($app)
-        {
-            $path     = $app['config']['setting::setting.path'];
-            $filename = $app['config']['setting::setting.filename'];
-            
-            return new Setting($path, $filename, $app['config']['setting::setting.fallback'] ? new LaravelFallbackInterface() : null);
-        });
-        
-        $this->app->booting(function($app)
-        {
-            if ($app['config']['setting::setting.autoAlias'])
-            {
-                $loader = \Illuminate\Foundation\AliasLoader::getInstance();
-                $loader->alias('Setting', 'Philf\Setting\Facades\Setting');
-            }
+        $this->app->singleton(Setting::class, function ($app) {
+            $configName     = $app['config']['setting::setting.path'];
+            return new Setting(new File(), $configName, $app['config']['setting::setting.fallback'] ? new LaravelFallbackInterface() : null);
         });
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use Philf\Setting\Adapters\File;
 use Philf\Setting\Setting;
 
 /**
@@ -23,7 +24,7 @@ class SettingTest extends PHPUnit_Framework_TestCase {
     protected function setUp()
     {
         parent::setUp();
-        $this->setting = new Setting(sys_get_temp_dir(), $this->file);
+        $this->setting = new Setting(new File(), sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->file);
         $this->setting->clear();
     }
 
@@ -64,11 +65,11 @@ class SettingTest extends PHPUnit_Framework_TestCase {
     {
         $this->setting->set('isFalse', false);
         $this->assertTrue($this->setting->has('isFalse'));
-        $this->assertSame(false, $this->setting->get('isFalse'));
+        $this->assertFalse($this->setting->get('isFalse'));
 
         $this->setting->set('isTrue', true);
         $this->assertTrue($this->setting->has('isTrue'));
-        $this->assertSame(true, $this->setting->get('isTrue'));
+        $this->assertTrue($this->setting->get('isTrue'));
     }
 
     public function testForget()
@@ -102,9 +103,9 @@ class SettingTest extends PHPUnit_Framework_TestCase {
 
     public function testSetArray(){
         $array = array(
-            'id' => "foo",
+            'id' => 'foo',
             'user_info' => array(
-                'username' => "bar",
+                'username' => 'bar',
                 'recently_viewed' => false,
             )
         );

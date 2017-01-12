@@ -1,5 +1,6 @@
 <?php namespace Philf\Setting;
 
+use Philf\Setting\interfaces\AdapterInterface;
 /*
  * ---------------------------------------------
  * | Do not remove!!!!                         |
@@ -32,14 +33,6 @@
  * Clear:
  * clear:        Setting::clear()
  *
- * Using a different path (make sure the path exists and is writable) *
- * Setting::path('setting2.json')->set(array('names2' => array('firstName' => 'Phil', 'surname' => 'F')));
- *
- * Using a different filename
- * Setting::filename('setting2.json')->set(array('names2' => array('firstName' => 'Phil', 'surname' => 'F')));
- *
- * Using both a different path and filename (make sure the path exists and is writable)
- * Setting::path(app_path().'/storage/meta/sub')->filename('dummy.json')->set(array('names2' => array('firstName' => 'Phil', 'surname' => 'F')));
  */
 
 /**
@@ -49,16 +42,10 @@
 class Setting {
 
     /**
-     * The path to the file
-     * @var string
+     * Adapter class
+     * @var AdapterInterface
      */
-    protected $path;
-
-    /**
-     * The filename used to store the config
-     * @var string
-     */
-    protected $filename;
+    protected $adapter;
 
     /**
      * The class working array
@@ -68,40 +55,18 @@ class Setting {
 
     /**
      * Create the Setting instance
-     * @param string $path      The path to the file
-     * @param string $filename  The filename
+     * @param AdapterInterface $adapter
+     * @param null|string|int $configName
      * @param interfaces\FallbackInterface $fallback
      */
-    public function __construct($path, $filename, $fallback = null)
+    public function __construct(AdapterInterface $adapter, $configName = null, $fallback = null)
     {
-        $this->path     = $path;
-        $this->filename = $filename;
+        $this->adapter  = $adapter;
+        $this->configName  = $configName;
         $this->fallback = $fallback;
 
         // Load the file and store the contents in $this->settings
-        $this->load($this->path, $this->filename);
-    }
-
-    /**
-     * Set the path to the file to use
-     * @param  string $path The path to the file
-     * @return \Philf\Setting\Setting
-     */
-    public function path($path)
-    {
-        $this->path = $path;
-        return $this;
-    }
-
-    /**
-     * Set the filename to use
-     * @param  string $filename The filename
-     * @return \Philf\Setting\Setting
-     */
-    public function filename($filename)
-    {
-        $this->filename = $filename;
-        return $this;
+        $this->load();
     }
 
     /**
@@ -110,7 +75,7 @@ class Setting {
      * @param Mixed $default
      * @return Mixed             The value(s) found
      */
-    public function get($key = null, $default = null)
+    public function get(string $key = null, $default = null)
     {
         if (empty($key))
         {
@@ -141,8 +106,8 @@ class Setting {
     public function set($key, $value)
     {
         array_set($this->settings,$key,$value);
-        $this->save($this->path, $this->filename);
-        $this->load($this->path, $this->filename);
+        $this->save();
+        $this->load();
     }
 
     /**
@@ -153,8 +118,8 @@ class Setting {
     public function forget($deleteKey)
     {
         array_forget($this->settings,$deleteKey);
-        $this->save($this->path, $this->filename);
-        $this->load($this->path, $this->filename);
+        $this->save();
+        $this->load();
     }
 
     /**
@@ -166,7 +131,7 @@ class Setting {
     {
         $default = microtime(true);
 
-        if($default == array_get($this->settings, $searchKey, $default) and !is_null($this->fallback))
+        if(null !== $this->fallback && $default === array_get($this->settings, $searchKey, $default))
         {
             return $this->fallback->fallbackHas($searchKey);
         }
@@ -175,55 +140,34 @@ class Setting {
 
     /**
      * Load the file in to $this->settings so values can be used immediately
-     * @param  string $path     The path to be used
-     * @param  string $filename The filename to be used
-     * @return \Philf\Setting\Setting
+     * @param null $configName
+     * @return Setting
      */
-    public function load($path = null, $filename = null)
+    public function load($configName = null)
     {
-        $this->path     = isset($path) ? $path : $this->path;
-        $this->filename = isset($filename) ? $filename : $this->filename;
-
-        if (is_file($this->path.'/'.$this->filename))
-        {
-            $this->settings = json_decode(file_get_contents($this->path.'/'.$this->filename), true);
-        }
-        else
-        {
-            $this->settings = array();
-        }
-
+        $this->settings = json_decode($this->adapter->load($configName ?? $this->configName), true);
         return $this;
     }
 
     /**
      * Save the file
-     * @param  string $path     The path to be used
-     * @param  string $filename The filename to be used
+     * @param null $configName
      * @return void
      */
-    public function save($path = null, $filename = null)
+    public function save($configName = null)
     {
-        $this->path     = isset($path) ? $path : $this->path;
-        $this->filename = isset($filename) ? $filename : $this->filename;
-        if ( ! file_exists($this->path))
-        {
-            mkdir($this->path, 0755, true);
-        }
-
-        $fh = fopen($this->path.'/'.$this->filename, 'w+');
-        fwrite($fh, json_encode($this->settings));
-        fclose($fh);
+        $this->adapter->save($configName ?? $this->configName, json_encode($this->settings));
     }
 
     /**
      * Clears the JSON Config file
+     * @param null $configName
      */
-    public function clear()
+    public function clear($configName = null)
     {
-        $this->settings = array();
-        $this->save($this->path, $this->filename);
-        $this->load($this->path, $this->filename);
+        $this->settings = [];
+        $this->save($configName);
+        $this->load();
     }
 
     /**
@@ -237,7 +181,7 @@ class Setting {
             array_set($this->settings,$key,$value);
         }
 
-        $this->save($this->path, $this->filename);
-        $this->load($this->path, $this->filename);
+        $this->save();
+        $this->load();
     }
 }
