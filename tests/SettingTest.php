@@ -18,6 +18,8 @@ class SettingTest extends PHPUnit_Framework_TestCase {
      */
     private $file = 'test.json';
 
+    private $newFile = 'new_test.json';
+
     /**
      * Set Up
      */
@@ -112,6 +114,8 @@ class SettingTest extends PHPUnit_Framework_TestCase {
         $this->setting->setArray($array);
         $this->assertEquals($array, $this->setting->get());
 
+        $this->setting->setArray($array, true, sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->newFile);
+        $this->assertEquals($array, $this->setting->get());
     }
 
     public function testGet() {

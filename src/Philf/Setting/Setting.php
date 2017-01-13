@@ -173,12 +173,18 @@ class Setting {
     /**
      * This will mass assign data to the Setting
      * @param array $data
+     * @param bool $storeAsNew
+     * @param null|string|int $configName
      */
-    public function setArray(array $data)
+    public function setArray(array $data, bool $storeAsNew = false, $configName = null)
     {
         foreach ($data as $key => $value)
         {
             array_set($this->settings,$key,$value);
+        }
+
+        if($storeAsNew && $configName) {
+            $this->configName = $configName;
         }
 
         $this->save();
