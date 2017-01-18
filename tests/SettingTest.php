@@ -122,4 +122,12 @@ class SettingTest extends PHPUnit_Framework_TestCase {
         $value = $this->setting->get("key that doesn't exist", 0);
         $this->assertSame(0, $value);
     }
+
+    public function testIsEmpty() {
+        $this->setting = new Setting(new File(), sys_get_temp_dir() . DIRECTORY_SEPARATOR . $this->file);
+        $this->setting->set('a', 'Hälfte');
+        $this->assertFalse($this->setting->isEmpty());
+        $this->setting->clear();
+        $this->assertTrue($this->setting->isEmpty());
+    }
 }

@@ -160,6 +160,15 @@ class Setting {
     }
 
     /**
+     * Check if settings are filled with data
+     * @return bool
+     */
+    public function isEmpty()
+    {
+        return empty($this->settings);
+    }
+
+    /**
      * Clears the JSON Config file
      * @param null $configName
      */
